@@ -54,6 +54,6 @@ echo $version > $servername/version.txt
 # Start server
 [ $output ] && echo Starting server...
 pushd $servername > /dev/null
-screen -dmS $servername ./bedrock_server
+screen -dmSL $servername ./bedrock_server
 popd > /dev/null
 echo Updated $servername to version $version
