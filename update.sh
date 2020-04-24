@@ -1,13 +1,9 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
-# Check servername parameter
-[ -z $1 ] && echo Missing parameter 'servername' && exit 2
-servername=${1%/}
-
 # Init
+servername=${PWD##*/}
 timestamp=$(date +%y%m%d%H%M%S)
-backup=backup-$servername-$timestamp
 tty -s && output=1 || output=
 
 # Get latest version
@@ -18,7 +14,7 @@ file=bedrock-server-$version.zip
 [ $output ] && echo Latest version: $version
 
 # Installed version
-installed=$(cat $servername/version.txt)
+installed=$(cat version.txt)
 [ $output ] && echo Installed version: $installed
 
 # Check if already on newest version
@@ -34,7 +30,10 @@ screen -S $servername -p 0 -X stuff "stop^M"
 
 # Backup files
 [ $output ] && echo Creating backup...
-mv $servername/ $backup/
+cp server.properties server.properties.bak
+cp permissions.json permissions.json.bak
+backupfile=backup-$servername-$(date +%y%m%d%H%M%S).tar.gz
+tar -zcf ../$backupfile .
 
 # New vesion
 if [ ! -f "$file" ]; then
@@ -42,18 +41,17 @@ if [ ! -f "$file" ]; then
   wget -q $url
 fi
 [ $output ] && echo Extracting server...
-unzip -q $file -d $servername
+unzip -oq $file
 
-# Restore world & config
+# Restore config
 [ $output ] && echo Configuring...
-cp -r $backup/worlds $backup/server.properties $backup/permissions.json $servername/
+cp server.properties.bak server.properties
+cp permissions.json.bak permissions.json
 
 # Register version
-echo $version > $servername/version.txt
+echo $version > version.txt
 
 # Start server
 [ $output ] && echo Starting server...
-pushd $servername > /dev/null
 screen -dmSL $servername ./bedrock_server
-popd > /dev/null
 echo Updated $servername to version $version
